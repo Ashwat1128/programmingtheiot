@@ -9,9 +9,7 @@
 # provided within in order to meet the needs of your specific
 # Programming the Internet of Things project.
 # 
-
 import programmingtheiot.common.ConfigConst as ConfigConst
-
 from programmingtheiot.data.BaseIotData import BaseIotData
 
 class SensorData(BaseIotData):
@@ -22,7 +20,10 @@ class SensorData(BaseIotData):
 		
 	def __init__(self, typeID: int = ConfigConst.DEFAULT_SENSOR_TYPE, name = ConfigConst.NOT_SET, d = None):
 		super(SensorData, self).__init__(name = name, typeID = typeID, d = d)
-		pass
+		# Initialize the sensor value with default
+		self.value = ConfigConst.DEFAULT_VAL
+		# Initialize sensor type for backward compatibility
+		self.sensorType = typeID
 	
 	def getSensorType(self) -> int:
 		"""
@@ -33,10 +34,32 @@ class SensorData(BaseIotData):
 		return self.sensorType
 	
 	def getValue(self) -> float:
-		pass
+		"""
+		Returns the current sensor value.
+		
+		@return float The current sensor value
+		"""
+		return self.value
 	
 	def setValue(self, newVal: float):
-		pass
+		"""
+		Sets the sensor value and updates the timestamp.
+		
+		@param newVal The new sensor value to set
+		"""
+		if newVal is not None:
+			self.value = newVal
+			# Update timestamp when value changes
+			self.updateTimeStamp()
 		
 	def _handleUpdateData(self, data):
-		pass
+		"""
+		Internal method to update this instance with data from another SensorData instance.
+		
+		@param data The SensorData instance to copy data from
+		"""
+		if data and isinstance(data, SensorData):
+			self.setValue(data.getValue())
+			# Update sensor type if provided
+			if hasattr(data, 'sensorType'):
+				self.sensorType = data.sensorType

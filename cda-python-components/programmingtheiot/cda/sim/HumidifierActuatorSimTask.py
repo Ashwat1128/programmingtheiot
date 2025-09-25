@@ -10,6 +10,7 @@
 # Programming the Internet of Things project.
 # 
 
+import programmingtheiot.common.ConfigConst as ConfigConst
 from programmingtheiot.data.ActuatorData import ActuatorData
 from programmingtheiot.cda.sim.BaseActuatorSimTask import BaseActuatorSimTask
 
@@ -22,7 +23,13 @@ class HumidifierActuatorSimTask(BaseActuatorSimTask):
 	via the 'val' parameter.
 	
 	"""
-
 	def __init__(self):
-		pass
+		"""
+		Constructor for HumidifierActuatorSimTask.
 		
+		Initializes the humidifier actuator with appropriate configuration constants.
+		"""
+		super(HumidifierActuatorSimTask, self).__init__(
+			name = ConfigConst.HUMIDIFIER_ACTUATOR_NAME,
+			typeID = ConfigConst.HUMIDIFIER_ACTUATOR_TYPE,
+			simpleName = "HUMIDIFIER")

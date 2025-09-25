@@ -13,13 +13,11 @@
 import argparse
 import logging
 import traceback
-
 from time import sleep
 
 import programmingtheiot.common.ConfigConst as ConfigConst
-from programmingtheiot.cda.system.SystemPerformanceManager import SystemPerformanceManager
-
 from programmingtheiot.common.ConfigUtil import ConfigUtil
+from programmingtheiot.cda.app.DeviceDataManager import DeviceDataManager
 
 logging.basicConfig(format = '%(asctime)s:%(name)s:%(levelname)s:%(message)s', level = logging.DEBUG)
 
@@ -37,12 +35,17 @@ class ConstrainedDeviceApp():
 		"""
 		logging.info("Initializing CDA...")
 		
-		# TODO: implementation here
-		self.sysPerfMgr = SystemPerformanceManager()
+		# Create DeviceDataManager instance (replaces direct SystemPerformanceManager usage)
+		self.devDataMgr = DeviceDataManager()
 		self.isStarted = False
+		
+		logging.info("CDA initialization complete.")
 
 	def isAppStarted(self) -> bool:
 		"""
+		Check if the application has been started.
+		
+		@return bool True if started, False otherwise
 		"""
 		return self.isStarted
 
@@ -53,8 +56,9 @@ class ConstrainedDeviceApp():
 		"""
 		logging.info("Starting CDA...")
 		
-		if self.sysPerfMgr:
-			self.sysPerfMgr.startManager()
+		if self.devDataMgr:
+			self.devDataMgr.startManager()
+			self.isStarted = True
 		
 		logging.info("CDA started.")
 
@@ -62,11 +66,13 @@ class ConstrainedDeviceApp():
 		"""
 		Stop the CDA. Calls stopManager() on the device data manager instance.
 		
+		@param code The exit code to use when stopping
 		"""
 		logging.info("CDA stopping...")
 		
-		if self.sysPerfMgr:
-			self.sysPerfMgr.stopManager()
+		if self.devDataMgr:
+			self.devDataMgr.stopManager()
+			self.isStarted = False
 		
 		logging.info("CDA stopped with exit code %s.", str(code))
 		
@@ -74,64 +80,60 @@ def main():
 	"""
 	Main function definition for running client as application.
 	
-	Current implementation runs for 65 seconds then exits.
+	Current implementation runs for 65 seconds then exits, or runs forever based on configuration.
 	"""
 	argParser = argparse.ArgumentParser( \
 		description = 'CDA used for generating telemetry - Programming the IoT.')
 	
 	argParser.add_argument('-c', '--configFile', help = 'Optional custom configuration file for the CDA.')
-
 	configFile = None
-
+	
 	try:
 		args = argParser.parse_args()
 		configFile = args.configFile
-
 		logging.info('Parsed configuration file arg: %s', configFile)
 	except:
 		logging.info('No arguments to parse.')
-
-	# init ConfigUtil
+	
+	# Initialize ConfigUtil
 	configUtil = ConfigUtil(configFile)
 	cda = None
-
+	
 	try:
-		# init CDA
+		# Initialize CDA
 		cda = ConstrainedDeviceApp()
-
-		# start CDA
+		
+		# Start CDA
 		cda.startApp()
-
-		# check if CDA should run forever
+		
+		# Check if CDA should run forever
 		runForever = configUtil.getBoolean(ConfigConst.CONSTRAINED_DEVICE, ConfigConst.RUN_FOREVER_KEY)
-
+		
 		if runForever:
-			# sleep ~5 seconds every loop
+			logging.info("CDA configured to run forever. Use Ctrl+C to exit.")
+			# Sleep ~5 seconds every loop
 			while (True):
 				sleep(5)
-			
 		else:
-			# run CDA for ~65 seconds then exit
+			# Run CDA for ~65 seconds then exit
+			logging.info("CDA configured to run for 65 seconds.")
 			if (cda.isAppStarted()):
 				sleep(65)
 				cda.stopApp(0)
 			
 	except KeyboardInterrupt:
 		logging.warning('Keyboard interruption for CDA. Exiting.')
-
 		if (cda):
 			cda.stopApp(-1)
-
 	except Exception as e:
-		# handle any uncaught exception that may be thrown
+		# Handle any uncaught exception that may be thrown
 		# during CDA initialization
 		logging.error('Startup exception caused CDA to fail. Exiting.')
 		traceback.print_exception(type(e), e, e.__traceback__)
-
 		if (cda):
 			cda.stopApp(-2)
-
-	# unnecessary
+	
+	# Exit cleanly
 	logging.info('Exiting CDA.')
 	exit()
 
