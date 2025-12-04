@@ -87,7 +87,7 @@ class MqttClientConnector(IPubSubClient):
 			self.clientID = self.locationID
 		
 		# Create MQTT client instance (using MQTT v3.1.1) - FIXED: Added CallbackAPIVersion
-		self.mc = mqttClient.Client(client_id=self.clientID, clean_session=True)
+		self.mc = mqttClient.Client(mqttClient.CallbackAPIVersion.VERSION1, client_id=self.clientID, clean_session=True)
 		
 		# Set callback functions
 		self.mc.on_connect = self.onConnect
